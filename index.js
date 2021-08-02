@@ -11,7 +11,7 @@ inquirer
     //takes one or two block numbers as inputs
     {
       type: "input",
-      name: "blockNumbers",
+      name: "blockRange",
       message:
         "What is the block number or block number range (please use a space to separate the two block numbers for indicating a range) you would like to look at?",
     },
@@ -19,21 +19,21 @@ inquirer
   .then((answers) => {
     // check input
     let block = [];
+    let txns = [];
     let total = 0;
-    if (answers.blockNumbers.includes(" ")) {
-      block = answers.blockNumbers.split(" ");
+    if (answers.blockRange.includes(" ")) {
+      block = answers.blockRange.split(" ");
     } else {
-      block.push(answers.blockNumbers);
+      block.push(answers.blockRange);
       //get the latest block number
 
       async function latestBlock() {
         let latest = await web3.eth.getBlockNumber();
         console.log("The latest block number is " + latest);
         block.push(String(latest));
-        console.log(block);
-        // var transaction = web3.eth.getBlock(latest, true).then(console.log);
+        answers.blockRange = `We are looking at block ${block[0]} to ${block[1]}`;
       }
-      let txns = [];
+
       async function totalEth() {
         txns = await web3.alchemy.getAssetTransfers({
           fromBlock: "latest",
@@ -42,16 +42,12 @@ inquirer
         });
         txns = Object.values(txns)[0].filter((txn) => txn.asset == "ETH");
         total = txns.map((txn) => txn.value).reduce((a, b) => a + b, 0);
-        console.log(total);
-        answers.totalEth = total;
+        answers.totalEth = `Total Eth transfered is ${total}`;
         console.log(answers);
       }
 
       latestBlock();
       totalEth();
-
-      //Total eth transfered
-
       answers.totalEth = total;
     }
 
