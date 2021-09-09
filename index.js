@@ -1,60 +1,78 @@
-console.log("starting");
+require("dotenv").config();
 const inquirer = require("inquirer");
 const { createAlchemyWeb3 } = require("@alch/alchemy-web3");
 const web3 = createAlchemyWeb3(
-  "https://eth-mainnet.alchemyapi.io/v2/6hvJk7StztjBHEPW3DT3GP_ifo041gKk"
+  `https://eth-mainnet.alchemyapi.io/v2/${process.env.API_KEY}`
 );
 
 inquirer
   .prompt([
-    /* Pass your questions in here */
     //takes one or two block numbers as inputs
     {
       type: "input",
       name: "blockRange",
       message:
-        "What is the block number or block number range (please use a space to separate the two block numbers for indicating a range) you would like to look at?",
+        "Please enter the block number or block range (please use a space to separate the two block numbers for indicating a range)?",
     },
   ])
   .then((answers) => {
     // check input
-    let block = [];
-    let txns = [];
-    let total = 0;
+    let block = [],
+      txns = [],
+      total = 0;
+
     if (answers.blockRange.includes(" ")) {
       block = answers.blockRange.split(" ");
     } else {
       block.push(answers.blockRange);
-      //get the latest block number
+    }
 
-      async function latestBlock() {
-        let latest = await web3.eth.getBlockNumber();
-        console.log("The latest block number is " + latest);
-        block.push(String(latest));
-        answers.blockRange = `We are looking at block ${block[0]} to ${block[1]}`;
-      }
+    async function checkContract(address) {
+      await web3.eth.getCode(address, "latest", (result) => {
+        if (result.length > 2) {
+          return (address += "(contract)");
+        }
+      });
+    }
 
-      async function totalEth() {
+    async function blocker() {
+      let from = "0x" + Number(block[0]).toString(16);
+      let to = block[1] ? "0x" + Number(block[1]).toString(16) : "latest";
+
+      try {
         txns = await web3.alchemy.getAssetTransfers({
-          fromBlock: "latest",
+          fromBlock: from,
+          toBlock: to,
           excludeZeroValue: true,
-          category: [],
         });
+
+        //total eth calculation
         txns = Object.values(txns)[0].filter((txn) => txn.asset == "ETH");
         total = txns.map((txn) => txn.value).reduce((a, b) => a + b, 0);
         answers.totalEth = `Total Eth transfered is ${total}`;
-        console.log(answers);
-      }
 
-      latestBlock();
-      totalEth();
-      answers.totalEth = total;
+        //Which addresses received Ether and how much did they receive in total?
+
+        answers.received = txns.map((txn) => {
+          return {
+            address: txn.to,
+            received: `${txn.value}Eth`,
+          };
+        });
+
+        // Which addresses sent Ether and how much did they send in total?
+        answers.send = txns.map((txn) => {
+          return {
+            address: txn.from,
+            send: `${txn.value}Eth`,
+          };
+        });
+
+        console.log("answers", answers);
+      } catch (error) {
+        console.error(error);
+      }
     }
 
-    //Which addresses received Ether and how much did they receive in total?
-
-    // Which addresses sent Ether and how much did they send in total?
-
-    // Of these addresses, which are contract addresses?
-    // console.log(answers, "end");
+    blocker();
   });
