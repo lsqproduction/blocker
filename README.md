@@ -1,6 +1,6 @@
-================
 
-Console block explorer written in node.js.
+
+Console block explorer tool written in node.js for ethereum mainnet. 
 
 ### See it in action
 
@@ -11,9 +11,11 @@ Console block explorer written in node.js.
 
 ### Start
 
+    $ npm install
     $ npm start
+    
 
 ### Input options
 
-*Enter one block number: block number to the latest block.
-*Enter two block number: Specific block range.
+* Enter one block number: block number to the latest block.
+* Enter two block number: Specific block range.
