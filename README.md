@@ -15,5 +15,5 @@ Console block explorer written in node.js.
 
 ### Input options
 
-Enter one block number: block number to the latest block.
-Enter two block number: Specific block range.
+*Enter one block number: block number to the latest block.
+*Enter two block number: Specific block range.
