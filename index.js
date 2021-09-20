@@ -28,11 +28,12 @@ inquirer
     }
 
     async function checkContract(address) {
-      await web3.eth.getCode(address, "latest", (result) => {
-        if (result.length > 2) {
-          return (address += "(contract)");
-        }
-      });
+      let code = await web3.eth.getCode(address, "latest");
+      if (code.length > 2) {
+        return address + "(contract)";
+      } else {
+        return address;
+      }
     }
 
     async function blocker() {
@@ -53,20 +54,24 @@ inquirer
 
         //Which addresses received Ether and how much did they receive in total?
 
-        answers.received = txns.map((txn) => {
-          return {
-            address: txn.to,
-            received: `${txn.value}Eth`,
-          };
-        });
+        answers.received = await Promise.all(
+          txns.map(async (txn) => {
+            return {
+              address: await checkContract(txn.to),
+              received: `${txn.value}Eth`,
+            };
+          })
+        );
 
         // Which addresses sent Ether and how much did they send in total?
-        answers.send = txns.map((txn) => {
-          return {
-            address: txn.from,
-            send: `${txn.value}Eth`,
-          };
-        });
+        answers.send = await Promise.all(
+          txns.map(async (txn) => {
+            return {
+              address: await checkContract(txn.from),
+              send: `${txn.value}Eth`,
+            };
+          })
+        );
 
         console.log("answers", answers);
       } catch (error) {
